@@ -9,6 +9,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.PropertyConfigurator;
 import org.reflections.Reflections;
 import water.UDPRebooted.ShutdownTsk;
+import water.api.AbstractRegister;
 import water.api.RequestServer;
 import water.exceptions.H2OFailException;
 import water.exceptions.H2OIllegalArgumentException;
@@ -778,28 +779,15 @@ final public class H2O {
     Log.info("Registered " + H2O.getExtensions().size() + " extensions in: " + registerExtensionsMillis + "mS");
 
     long before = System.currentTimeMillis();
-
-    // Disallow schemas whose parent is in another package because it takes ~4s to do the getSubTypesOf call.
-    String[] packages = new String[] { "water", "hex" };
-
-    for (String pkg : packages) {
-      Reflections reflections = new Reflections(pkg);
-      Log.debug("Registering REST APIs for package: " + pkg);
-      for (Class registerClass : reflections.getSubTypesOf(water.api.AbstractRegister.class)) {
-        if (!Modifier.isAbstract(registerClass.getModifiers())) {
-          try {
-            Log.debug("Found REST API registration for class: " + registerClass.getName());
-            Object instance = registerClass.newInstance();
-            water.api.AbstractRegister r = (water.api.AbstractRegister) instance;
-            r.register(relativeResourcePath);
-          }
-          catch (Exception e) {
-            throw H2O.fail(e.toString());
-          }
-        }
+    ServiceLoader<AbstractRegister> extensionsLoader = ServiceLoader.load(AbstractRegister.class);
+    for (AbstractRegister r : extensionsLoader) {
+      try {
+        r.register(relativeResourcePath);
+      } catch (Exception e) {
+        Log.info("Cannot register extension: " + r);
       }
     }
-
+    
     apisRegistered = true;
 
     long registerApisMillis = System.currentTimeMillis() - before;

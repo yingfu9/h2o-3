@@ -6,7 +6,7 @@ import water.api.GridSearchHandler;
 
 public class RegisterAlgos extends water.api.AbstractRegister {
   // Register the algorithms and their builder handlers:
-  @Override public void register(String relativeResourcePath) throws ClassNotFoundException {
+  @Override public void register(String relativeResourcePath) {
     // List of algorithms
     ModelBuilder[] algos = new ModelBuilder[]{
       new hex.deeplearning.DeepLearning(true),

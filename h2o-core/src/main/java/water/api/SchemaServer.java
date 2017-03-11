@@ -15,6 +15,7 @@ import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 /**
  *
@@ -83,7 +84,8 @@ public class SchemaServer {
    * @throws water.exceptions.H2OFailException if there is a name collision, if the type parameters are bad, or if
    *         the version is bad
    */
-  private static void register(Class<? extends Schema> clz) {
+  private static void register(Schema schema) {
+    Class clz = schema.getClass();
     synchronized(clz) {
       String clzname = clz.getSimpleName();
 
@@ -139,10 +141,8 @@ public class SchemaServer {
 
       // Check that it is possible to create a schema object
       try {
-        Schema s = clz.newInstance();
-
         // Validate the fields:
-        SchemaMetadata meta = new SchemaMetadata(s);
+        SchemaMetadata meta = new SchemaMetadata(schema);
         for (SchemaMetadata.FieldMetadata field_meta : meta.fields) {
           String name = field_meta.name;
 
@@ -195,30 +195,13 @@ public class SchemaServer {
     if (schemas_registered) return;
     long startTime = System.currentTimeMillis();
 
-    // Scanning all classes (i.e. calling new Reflections("")) is prohibitively expensive -- it adds over 2s to the
-    // startup time. Instead we just assume that all schemas live in one of the packages below, and scan just those.
-    Reflections[] reflList = new Reflections[]{
-          new Reflections("water"),
-          new Reflections("hex"),
-          new Reflections("ai.h2o"),
-    };
-    registerSchemasOfClass(Schema.class, reflList);
+    ServiceLoader<Schema> loader = ServiceLoader.load(Schema.class);
+    for (Schema schema : loader) {
+      register(schema);
+    }
 
     Log.info("Registered: " + schemas().size() + " schemas in " + (System.currentTimeMillis() - startTime) + "ms");
     schemas_registered = true;
-  }
-
-  /**
-   * Schema registration helper, that looks schemas up recursively.
-   */
-  static private void registerSchemasOfClass(Class<? extends Schema> clz, Reflections[] reflList) {
-    if (!Modifier.isAbstract(clz.getModifiers())) {
-      register(clz);
-    }
-    for (Reflections refl : reflList)
-      for (Class<? extends Schema> schema_class : refl.getSubTypesOf(clz)) {
-        registerSchemasOfClass(schema_class, reflList);
-      }
   }
 
   /**

@@ -191,15 +191,13 @@ public class SchemaServer {
   /**
    * Find all schemas using reflection and register them.
    */
-  synchronized static public void registerAllSchemasIfNecessary() {
+  synchronized static public void registerAllSchemasIfNecessary(Schema ... schemas) {
     if (schemas_registered) return;
     long startTime = System.currentTimeMillis();
-
-    ServiceLoader<Schema> loader = ServiceLoader.load(Schema.class);
-    for (Schema schema : loader) {
+    for (Schema schema : schemas) {
       register(schema);
     }
-
+        
     Log.info("Registered: " + schemas().size() + " schemas in " + (System.currentTimeMillis() - startTime) + "ms");
     schemas_registered = true;
   }

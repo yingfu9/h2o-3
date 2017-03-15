@@ -10,7 +10,15 @@ import org.apache.log4j.PropertyConfigurator;
 import org.reflections.Reflections;
 import water.UDPRebooted.ShutdownTsk;
 import water.api.AbstractRegister;
+import water.api.Handler;
+import water.api.HandlerFactory;
+import water.api.RegisterRestApi;
 import water.api.RequestServer;
+import water.api.RestApiContext;
+import water.api.RestApiHandler;
+import water.api.Route;
+import water.api.Schema;
+import water.api.SchemaServer;
 import water.exceptions.H2OFailException;
 import water.exceptions.H2OIllegalArgumentException;
 import water.init.*;
@@ -776,24 +784,30 @@ final public class H2O {
     for (AbstractH2OExtension e : H2O.getExtensions()) {
       e.printInitialized();
     }
-    Log.info("Registered " + H2O.getExtensions().size() + " extensions in: " + registerExtensionsMillis + "mS");
+    Log.info("Registered " + H2O.getExtensions().size() + " extensions in: " + registerExtensionsMillis + "ms");
 
     long before = System.currentTimeMillis();
-    ServiceLoader<AbstractRegister> extensionsLoader = ServiceLoader.load(AbstractRegister.class);
-    for (AbstractRegister r : extensionsLoader) {
+    RequestServer.DummyRestApiContext dummyRestApiContext = new RequestServer.DummyRestApiContext();
+    ServiceLoader<RegisterRestApi> restApiExtensionLoander = ServiceLoader.load(RegisterRestApi.class);
+    for (RegisterRestApi r : restApiExtensionLoander) {
       try {
         r.register(relativeResourcePath);
+        r.registerEndPoints(dummyRestApiContext);
+        r.registerSchemas(dummyRestApiContext);
       } catch (Exception e) {
-        Log.info("Cannot register extension: " + r);
+        Log.info("Cannot register extension: " + r + ". Skipping it...");
       }
     }
     
     apisRegistered = true;
 
     long registerApisMillis = System.currentTimeMillis() - before;
-    Log.info("Registered: " + RequestServer.numRoutes() + " REST APIs in: " + registerApisMillis + "mS");
-  }
+    Log.info("Registered: " + RequestServer.numRoutes() + " REST APIs in: " + registerApisMillis + "ms");
 
+    // Register all schemas
+    SchemaServer.registerAllSchemasIfNecessary(dummyRestApiContext.getAllSchemas());
+  }
+  
   //-------------------------------------------------------------------------------------------------------------------
 
   public static class AboutEntry {
@@ -1454,12 +1468,13 @@ final public class H2O {
   }
 
   // Callbacks to add new Requests & menu items
+  // FIXME: remove me please
   static private volatile boolean _doneRequests;
 
   static public void register(
       String method_url, Class<? extends water.api.Handler> hclass, String method, String apiName, String summary
   ) {
-    if (_doneRequests) throw new IllegalArgumentException("Cannot add more Requests once the list is finalized");
+    //if (_doneRequests) throw new IllegalArgumentException("Cannot add more Requests once the list is finalized");
     RequestServer.registerEndpoint(apiName, method_url, hclass, method, summary);
   }
 
@@ -1469,11 +1484,12 @@ final public class H2O {
 
   /** Start the web service; disallow future URL registration.
    *  Blocks until the server is up.  */
+  @Deprecated
   static public void finalizeRegistration() {
     if (_doneRequests || H2O.ARGS.disable_web) return;
     _doneRequests = true;
 
-    water.api.SchemaServer.registerAllSchemasIfNecessary();
+    //water.api.SchemaServer.registerAllSchemasIfNecessary();
     jetty.acceptRequests();
   }
 

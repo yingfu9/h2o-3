@@ -33,26 +33,3 @@ public interface RegisterRestApi {
    */
   void registerSchemas(RestApiContext context);
 }
-
-interface RestApiContext {
-  
-  Route registerEndpoint(String api_name,
-                         String method_uri,
-                         Class<? extends Handler> handler_class,
-                         String handler_method,
-                         String summary);
-
-  Route registerEndpoint(String api_name,
-                         String http_method,
-                         String url,
-                         Class<? extends Handler> handler_class,
-                         String handler_method,
-                         String summary,
-                         HandlerFactory handler_factory);
-
-
-  Route registerEndpoint(String method_uri,
-                         Class<? extends RestApiHandler> handler_clz);
-
-  void registerSchema(Schema ... schemas);
-}

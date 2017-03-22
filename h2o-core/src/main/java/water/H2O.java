@@ -729,7 +729,7 @@ final public class H2O {
   /**
    * Register H2O extensions.
    * <p/>
-   * Use reflection to find all classes that inherit from water.AbstractH2OExtension
+   * Use SPI to find all classes that extends water.AbstractH2OExtension
    * and call H2O.addExtension() for each.
    */
   public static void registerExtensions() {
@@ -738,15 +738,11 @@ final public class H2O {
     }
 
     long before = System.currentTimeMillis();
-
-    // Disallow schemas whose parent is in another package because it takes ~4s to do the getSubTypesOf call.
-    String[] packages = new String[]{"water", "hex"};
     ServiceLoader<AbstractH2OExtension> extensionsLoader = ServiceLoader.load(AbstractH2OExtension.class);
-    for (AbstractH2OExtension e : extensionsLoader) {
-      e.init();
-      extensions.add(e);
+    for (AbstractH2OExtension ext : extensionsLoader) {
+      ext.init();
+      addExtension(ext);
     }
-
     extensionsRegistered = true;
 
     registerExtensionsMillis = System.currentTimeMillis() - before;
@@ -1483,14 +1479,25 @@ final public class H2O {
   }
 
   /** Start the web service; disallow future URL registration.
-   *  Blocks until the server is up.  */
+   *  Blocks until the server is up.
+   *
+   *  @deprecated use starServingRestApi
+   */
   @Deprecated
   static public void finalizeRegistration() {
     if (_doneRequests || H2O.ARGS.disable_web) return;
     _doneRequests = true;
-
-    //water.api.SchemaServer.registerAllSchemasIfNecessary();
+    
     jetty.acceptRequests();
+  }
+
+  /**
+   * This switch Jetty into accepting mode.
+   */
+  static public void starServingRestApi() {
+    if (!H2O.ARGS.disable_web) {
+      jetty.acceptRequests();
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -1739,7 +1746,7 @@ final public class H2O {
 
   // --------------------------------------------------------------------------
   public static void main( String[] args ) {
-    long time0 = System.currentTimeMillis();
+   long time0 = System.currentTimeMillis();
 
    if (checkUnsupportedJava())
      throw new RuntimeException("Unsupported Java version");

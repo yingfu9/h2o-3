@@ -5,6 +5,7 @@ import Jama.EigenvalueDecomposition;
 import Jama.Matrix;
 import hex.DataInfo;
 import hex.FrameTask;
+import hex.Interaction;
 import hex.ToEigenVec;
 import hex.gram.Gram;
 import water.DKV;
@@ -16,6 +17,7 @@ import water.fvec.Frame;
 import water.fvec.NewChunk;
 import water.fvec.Vec;
 import water.util.ArrayUtils;
+import water.util.Log;
 
 public class LinearAlgebraUtils {
   /*
@@ -411,6 +413,19 @@ public class LinearAlgebraUtils {
 
   public static Vec toEigen(Vec src) {
     Frame train = new Frame(Key.<Frame>make(), new String[]{"enum"}, new Vec[]{src});
+    int maxLevels = 10;
+    if (src.cardinality()>maxLevels) {
+      Log.info("Reducing the cardinality of a categorical column with " + src.cardinality() + " levels to " + maxLevels);
+      Interaction inter = new Interaction();
+      inter._source_frame = train._key;
+      inter._max_factors = maxLevels; // keep only this many most frequent levels
+      inter._min_occurrence = 2; // but need at least 2 observations for a level to be kept
+      inter._pairwise = false;
+      Key<Frame> dest = Key.make();
+      inter.execImpl(dest);
+      train.remove();
+      train = dest.get();
+    }
     DataInfo dinfo = new DataInfo(train, null, 0, true /*_use_all_factor_levels*/, DataInfo.TransformType.NONE,
             DataInfo.TransformType.NONE, /* skipMissing */ false, /* imputeMissing */ true,
             /* missingBucket */ false, /* weights */ false, /* offset */ false, /* fold */ false, /* intercept */ false);

@@ -11,7 +11,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 
 import deepwater.backends.BackendModel;
 import hex.genmodel.algos.deepwater.caffe.nano.Deepwater;

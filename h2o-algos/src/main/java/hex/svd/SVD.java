@@ -123,9 +123,10 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
         _ncolExp = _glrmModel._output._catOffsets[_glrmModel._output._catOffsets.length-1]+_glrmModel._output._nnums;
       else
         _ncolExp = LinearAlgebraUtils.numColsExp(_train,_parms._use_all_factor_levels);
-    if (_ncolExp > MAX_COLS_EXPANDED)
+    if (_ncolExp > MAX_COLS_EXPANDED) {
       warn("_train", "_train has " + _ncolExp + " columns when categoricals are expanded. " +
-              "Algorithm may be slow.");
+              "Algorithm may be slow.  Avoid choosing the Randomized method.");
+    }
 
     if(_parms._nv < 1 || _parms._nv > _ncolExp)
       error("_nv", "Number of right singular values must be between 1 and " + _ncolExp);

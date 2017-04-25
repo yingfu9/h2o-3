@@ -73,6 +73,13 @@ public class Frame extends Lockable<Frame> {
     return false;
   }
 
+  public boolean hasInfs(){
+    // return if frame contains positive infinity
+    for(Vec v:_vecs)
+      if(v.pinfs() > 0) return true;
+    return false;
+  }
+
   /** Creates an internal frame composed of the given Vecs and default names.  The frame has no key. */
   public Frame(Vec... vecs){
     this(null, vecs);

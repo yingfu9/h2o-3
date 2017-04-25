@@ -19,6 +19,16 @@ import water.util.ArrayUtils;
 
 public class LinearAlgebraUtils {
   /*
+   * generate a frame of zeros with number of rows and columns defined by rowCount, colCount
+   */
+  public static Frame generateFrameOfZeros(int rowCount, int colCount) {
+    assert (rowCount > 0) && (colCount > 0);  // make sure we have positive row and column numbers
+
+    Vec tempVec = Vec.makeZero(rowCount);
+    return(new Frame(tempVec.makeZeros(colCount)));  // return a frame of zeros with size rowCount by colCount
+  }
+
+  /*
    * Forward substitution: Solve Lx = b for x with L = lower triangular matrix, b = real vector
    */
   public static double[] forwardSolve(double[][] L, double[] b) {

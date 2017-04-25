@@ -87,10 +87,14 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
     double r = _train.numRows();
     boolean useGramSVD = _parms._svd_method == SVDParameters.Method.GramSVD;
     boolean usePower = _parms._svd_method == SVDParameters.Method.Power;
-    long mem_usage = (useGramSVD || usePower) ? (long) (hb._cpus_allowed * p * p * 8/*doubles*/
+    boolean useRandomized = _parms._svd_method == SVDParameters.Method.Randomized;
+    long mem_usage = (useGramSVD || usePower || useRandomized) ? (long) (hb._cpus_allowed * p * p * 8/*doubles*/
             * Math.log((double) _train.lastVec().nChunks()) / Math.log(2.)) : 1; //one gram per core
     long mem_usage_w = (useGramSVD || usePower) ? (long) (hb._cpus_allowed * r * r * 8/*doubles*/
             * Math.log((double) _train.lastVec().nChunks()) / Math.log(2.)) : 1; //one gram per core
+    if (useRandomized) {
+      mem_usage_w = mem_usage;
+    }
     long max_mem = hb.get_free_mem();
 
     if ((mem_usage > max_mem) && (mem_usage_w > max_mem)) {
@@ -131,7 +135,7 @@ public class SVD extends ModelBuilder<SVDModel,SVDModel.SVDParameters,SVDModel.S
     if(_parms._nv < 1 || _parms._nv > _ncolExp)
       error("_nv", "Number of right singular values must be between 1 and " + _ncolExp);
 
-    if (_parms._svd_method != SVDParameters.Method.Randomized && expensive && error_count() == 0) {
+    if (expensive && error_count() == 0) {
       if (!(_train.hasNAs()) || _parms._impute_missing)  {
         checkMemoryFootPrint();  // perform memory check here if dataset contains no NAs or if impute_missing enabled
       }

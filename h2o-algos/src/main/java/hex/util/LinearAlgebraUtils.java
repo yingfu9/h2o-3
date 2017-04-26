@@ -8,10 +8,7 @@ import hex.FrameTask;
 import hex.Interaction;
 import hex.ToEigenVec;
 import hex.gram.Gram;
-import water.DKV;
-import water.Job;
-import water.Key;
-import water.MRTask;
+import water.*;
 import water.fvec.Chunk;
 import water.fvec.Frame;
 import water.fvec.NewChunk;
@@ -415,16 +412,16 @@ public class LinearAlgebraUtils {
     Frame train = new Frame(Key.<Frame>make(), new String[]{"enum"}, new Vec[]{src});
     int maxLevels = 10;
     if (src.cardinality()>maxLevels) {
+      DKV.put(train);
       Log.info("Reducing the cardinality of a categorical column with " + src.cardinality() + " levels to " + maxLevels);
       Interaction inter = new Interaction();
       inter._source_frame = train._key;
       inter._max_factors = maxLevels; // keep only this many most frequent levels
       inter._min_occurrence = 2; // but need at least 2 observations for a level to be kept
       inter._pairwise = false;
-      Key<Frame> dest = Key.make();
-      inter.execImpl(dest);
-      train.remove();
-      train = dest.get();
+      inter._factor_columns = train.names();
+      train = inter.execImpl(Key.<Frame>make()).get();
+      DKV.remove(train._key);
     }
     DataInfo dinfo = new DataInfo(train, null, 0, true /*_use_all_factor_levels*/, DataInfo.TransformType.NONE,
             DataInfo.TransformType.NONE, /* skipMissing */ false, /* imputeMissing */ true,

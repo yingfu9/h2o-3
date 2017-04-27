@@ -12,13 +12,12 @@ def pca_max_k():
 
     data = h2o.upload_file(pyunit_utils.locate("smalldata/prostate/prostate_cat.csv"))
     x = list(set(data.names))
-    pcaRandomized = H2OPCA(k=-1, transform="STANDARDIZE", pca_method="GramSVD", use_all_factor_levels=True,
+    pcaGramSVD = H2OPCA(k=-1, transform="STANDARDIZE", pca_method="GramSVD", use_all_factor_levels=True,
                            impute_missing=True, max_iterations=100, seed=12345)
-    pcaRandomized.train(x, training_frame=data)
-    pcaRandomized = H2OPCA(k=-1, transform="STANDARDIZE", pca_method="Randomized", use_all_factor_levels=True,
+    pcaGramSVD.train(x, training_frame=data)
+    pcaPower = H2OPCA(k=-1, transform="STANDARDIZE", pca_method="Power", use_all_factor_levels=True,
                            impute_missing=True, max_iterations=100, seed=12345)
-    pcaRandomized.train(x, training_frame=data)
-
+    pcaPower.train(x, training_frame=data)
     pcaRandomized = H2OPCA(k=-1, transform="STANDARDIZE", pca_method="Randomized", use_all_factor_levels=True,
                            impute_missing=True, max_iterations=100, seed=12345)
     pcaRandomized.train(x, training_frame=data)
